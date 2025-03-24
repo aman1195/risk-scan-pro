@@ -3,9 +3,7 @@ import { useState } from "react";
 import { FileText, Trash2, ExternalLink, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import RiskIndicator from "./RiskIndicator";
-
-type DocumentStatus = "analyzing" | "completed" | "error";
-type RiskLevel = "low" | "medium" | "high";
+import { Document, DocumentStatus, RiskLevel } from "@/types/document";
 
 interface DocumentCardProps {
   id: string;
@@ -19,6 +17,7 @@ interface DocumentCardProps {
   onDelete?: (id: string) => void;
   onView?: (id: string) => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const DocumentCard = ({
@@ -33,6 +32,7 @@ const DocumentCard = ({
   onDelete,
   onView,
   className,
+  style,
 }: DocumentCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -69,6 +69,7 @@ const DocumentCard = ({
         isHovered && "shadow-lg",
         className
       )}
+      style={style}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

@@ -1,157 +1,163 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Trash2, Plus, FilePlus } from "lucide-react";
+import { Trash2, Plus, FilePlus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
-
-type DocumentStatus = "analyzing" | "completed" | "error";
-type RiskLevel = "low" | "medium" | "high";
-
-interface CompletedDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "completed";
-  riskLevel: RiskLevel;
-  riskScore: number;
-  findings: string[];
-}
-
-interface AnalyzingDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "analyzing";
-  progress: number;
-}
-
-interface ErrorDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "error";
-  error: string;
-}
-
-type DocumentType = CompletedDocument | AnalyzingDocument | ErrorDocument;
+import { Document } from "@/types/document";
 
 const Documents = () => {
-  const [documents, setDocuments] = useState<DocumentType[]>([
-    {
-      id: "1",
-      title: "Non-Disclosure Agreement",
-      date: "June 15, 2023",
-      status: "completed" as const,
-      riskLevel: "low" as const,
-      riskScore: 25,
-      findings: [
-        "Standard NDA terms",
-        "2-year confidentiality period",
-        "Proper jurisdiction clause",
-      ],
-    },
-    {
-      id: "2",
-      title: "Employment Contract",
-      date: "July 3, 2023",
-      status: "completed" as const,
-      riskLevel: "medium" as const,
-      riskScore: 58,
-      findings: [
-        "Non-standard termination clause",
-        "Restrictive covenant may need review",
-        "Missing arbitration provision",
-      ],
-    },
-    {
-      id: "3",
-      title: "Software License Agreement",
-      date: "August 12, 2023",
-      status: "completed" as const,
-      riskLevel: "high" as const,
-      riskScore: 82,
-      findings: [
-        "Unlimited liability clause",
-        "Ambiguous licensing terms",
-        "No clear termination process",
-        "Potential IP rights conflicts",
-      ],
-    },
-    {
-      id: "4",
-      title: "Partnership Agreement",
-      date: "September 5, 2023",
-      status: "analyzing" as const,
-      progress: 65,
-    },
-    {
-      id: "5",
-      title: "Service Level Agreement",
-      date: "September 8, 2023",
-      status: "error" as const,
-      error: "Invalid document format. Please upload a PDF or DOCX file.",
-    },
-  ]);
+  const queryClient = useQueryClient();
 
-  const handleUploadDocument = () => {
-    const newDoc: AnalyzingDocument = {
-      id: `${Date.now()}`,
-      title: "New Document",
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      status: "analyzing" as const,
-      progress: 0,
-    };
+  // Function to format document data from Supabase
+  const formatDocument = (doc: any): Document => {
+    const formattedDate = new Date(doc.date).toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
 
-    setDocuments((prevDocs) => [...prevDocs, newDoc]);
+    if (doc.status === 'completed') {
+      return {
+        id: doc.id,
+        title: doc.title,
+        date: formattedDate,
+        status: 'completed',
+        riskLevel: doc.risk_level,
+        riskScore: doc.risk_score,
+        findings: doc.findings || [],
+      };
+    } else if (doc.status === 'analyzing') {
+      return {
+        id: doc.id,
+        title: doc.title,
+        date: formattedDate,
+        status: 'analyzing',
+        progress: doc.progress || 0,
+      };
+    } else {
+      return {
+        id: doc.id,
+        title: doc.title,
+        date: formattedDate,
+        status: 'error',
+        error: doc.error_message || 'Unknown error',
+      };
+    }
+  };
 
-    // Simulate document analysis progress
+  // Fetch documents from Supabase
+  const { data: documents, isLoading, error } = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return (data || []).map(formatDocument);
+    }
+  });
+
+  // Mutation for deleting a document
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.setQueryData(['documents'], (oldData: Document[] | undefined) => 
+        oldData ? oldData.filter(doc => doc.id !== id) : []
+      );
+      
+      toast("Document deleted", {
+        description: "The document has been removed from your list",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting document:", error);
+      toast("Error deleting document", {
+        description: "There was a problem deleting the document. Please try again.",
+      });
+    }
+  });
+
+  // Mutation for adding a new document
+  const addDocumentMutation = useMutation({
+    mutationFn: async () => {
+      const newDoc = {
+        title: "New Document",
+        status: "analyzing",
+        progress: 0
+      };
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .insert(newDoc)
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    },
+    onSuccess: (newDoc) => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      simulateAnalysisProgress(newDoc.id);
+    },
+    onError: (error) => {
+      console.error("Error adding document:", error);
+      toast("Error adding document", {
+        description: "There was a problem adding the document. Please try again.",
+      });
+    }
+  });
+
+  const simulateAnalysisProgress = (docId: string) => {
     let progress = 0;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       progress += 10;
       
       if (progress <= 100) {
-        setDocuments((prevDocs) => {
-          return prevDocs.map(doc => {
-            if (doc.id === newDoc.id && doc.status === "analyzing") {
-              return {
-                ...doc,
-                progress
-              };
-            }
-            return doc;
-          });
-        });
+        // Update progress in Supabase
+        await supabase
+          .from('documents')
+          .update({ progress })
+          .eq('id', docId);
+        
+        // Invalidate the query to refresh the data
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
       }
 
       if (progress === 100) {
         clearInterval(interval);
         
         // After analysis is complete, update the document status
-        setTimeout(() => {
-          setDocuments((prevDocs) => {
-            return prevDocs.map(doc => {
-              if (doc.id === newDoc.id) {
-                const completedDoc: CompletedDocument = {
-                  id: doc.id,
-                  title: "Partnership Agreement",
-                  date: doc.date,
-                  status: "completed" as const,
-                  riskLevel: "medium" as const,
-                  riskScore: 45,
-                  findings: [
-                    "Non-standard profit sharing",
-                    "Unclear exit strategy",
-                    "Missing mediation clause"
-                  ]
-                };
-                
-                return completedDoc;
-              }
-              return doc;
-            });
-          });
+        setTimeout(async () => {
+          const completedDoc = {
+            status: "completed",
+            risk_level: "medium",
+            risk_score: 45,
+            findings: [
+              "Non-standard profit sharing",
+              "Unclear exit strategy",
+              "Missing mediation clause"
+            ]
+          };
+          
+          await supabase
+            .from('documents')
+            .update(completedDoc)
+            .eq('id', docId);
+          
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
           
           toast("Document analysis complete", {
             description: "Review the findings to identify potential risks",
@@ -162,12 +168,16 @@ const Documents = () => {
   };
 
   const handleDeleteDocument = (id: string) => {
-    setDocuments((prevDocs) => prevDocs.filter((doc) => doc.id !== id));
-    
-    toast("Document deleted", {
-      description: "The document has been removed from your list",
-    });
+    deleteMutation.mutate(id);
   };
+
+  const handleUploadDocument = () => {
+    addDocumentMutation.mutate();
+  };
+
+  if (error) {
+    console.error("Error fetching documents:", error);
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -185,14 +195,23 @@ const Documents = () => {
             
             <button
               onClick={handleUploadDocument}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors"
+              disabled={addDocumentMutation.isPending}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-70"
             >
-              <Plus className="h-5 w-5" />
+              {addDocumentMutation.isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
               Upload Document
             </button>
           </div>
           
-          {documents.length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : documents && documents.length === 0 ? (
             <div className="text-center py-20">
               <FilePlus className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
               <h3 className="text-xl font-medium mb-2">No documents yet</h3>
@@ -201,15 +220,20 @@ const Documents = () => {
               </p>
               <button
                 onClick={handleUploadDocument}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors"
+                disabled={addDocumentMutation.isPending}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-70"
               >
-                <Plus className="h-5 w-5" />
+                {addDocumentMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Plus className="h-5 w-5" />
+                )}
                 Upload Document
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {documents.map((doc) => (
+              {documents?.map((doc) => (
                 <DocumentCard
                   key={doc.id}
                   {...doc}
