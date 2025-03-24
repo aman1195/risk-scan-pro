@@ -1,11 +1,11 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Shield, CheckSquare, ExternalLink, FileCheck } from "lucide-react";
+import { FileText, Shield, CheckSquare, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
-import { DocumentStatus } from "@/types/document";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -71,7 +71,7 @@ const Index = () => {
       id: "1",
       title: "Non-Disclosure Agreement",
       date: "June 15, 2023",
-      status: "completed" as DocumentStatus,
+      status: "completed",
       riskLevel: "low",
       riskScore: 25,
       findings: [
@@ -84,7 +84,7 @@ const Index = () => {
       id: "2",
       title: "Employment Contract",
       date: "July 3, 2023",
-      status: "completed" as DocumentStatus,
+      status: "completed",
       riskLevel: "medium",
       riskScore: 58,
       findings: [
@@ -293,7 +293,7 @@ const Index = () => {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   )}
-                  transitionDelay={`${index * 150}ms`}
+                  style={{ transitionDelay: `${index * 150}ms` }}
                   onView={(id) => console.log("View document", id)}
                 />
               ))}
