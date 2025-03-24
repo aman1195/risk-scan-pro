@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
+import { DocumentStatus } from "@/types/document";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -70,7 +71,7 @@ const Index = () => {
       id: "1",
       title: "Non-Disclosure Agreement",
       date: "June 15, 2023",
-      status: "completed",
+      status: "completed" as DocumentStatus,
       riskLevel: "low",
       riskScore: 25,
       findings: [
@@ -83,7 +84,7 @@ const Index = () => {
       id: "2",
       title: "Employment Contract",
       date: "July 3, 2023",
-      status: "completed",
+      status: "completed" as DocumentStatus,
       riskLevel: "medium",
       riskScore: 58,
       findings: [
