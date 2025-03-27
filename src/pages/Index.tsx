@@ -1,6 +1,7 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Shield, CheckSquare, ExternalLink, FileCheck } from "lucide-react";
+import { FileText, Shield, CheckSquare, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
@@ -93,40 +94,6 @@ const Index = () => {
       ],
     },
   ];
-
-  const documentExample = (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-      <DocumentCard
-        id="example-1"
-        title="Employment Agreement"
-        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-        status="completed"
-        riskLevel="medium"
-        riskScore={65}
-        findings={[
-          "Non-standard termination clause",
-          "Missing arbitration provision",
-          "Ambiguous payment terms"
-        ]}
-        className="transition-all duration-500 opacity-0 translate-y-4 transform"
-        onView={(id) => console.log("View document", id)}
-      />
-      <DocumentCard
-        id="example-2"
-        title="NDA with XYZ Corp"
-        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-        status="completed"
-        riskLevel="low"
-        riskScore={25}
-        findings={[
-          "Standard confidentiality provisions",
-          "Well-defined scope of protected information"
-        ]}
-        className="transition-all duration-500 opacity-0 translate-y-4 transform"
-        onView={(id) => console.log("View document", id)}
-      />
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -326,7 +293,7 @@ const Index = () => {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   )}
-                  transitionDelay={`${index * 150}ms`}
+                  style={{ transitionDelay: `${index * 150}ms` }}
                   onView={(id) => console.log("View document", id)}
                 />
               ))}
