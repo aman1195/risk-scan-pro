@@ -9,7 +9,126 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      contracts: {
+        Row: {
+          contract_type: string
+          created_at: string
+          description: string | null
+          first_party_name: string
+          id: string
+          intensity: string | null
+          jurisdiction: string | null
+          key_terms: string | null
+          risk_level: string | null
+          risk_score: number | null
+          second_party_name: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contract_type: string
+          created_at?: string
+          description?: string | null
+          first_party_name: string
+          id?: string
+          intensity?: string | null
+          jurisdiction?: string | null
+          key_terms?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          second_party_name: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          description?: string | null
+          first_party_name?: string
+          id?: string
+          intensity?: string | null
+          jurisdiction?: string | null
+          key_terms?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          second_party_name?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          findings: Json | null
+          id: string
+          recommendations: string | null
+          risk_level: string | null
+          risk_score: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          findings?: Json | null
+          id?: string
+          recommendations?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          findings?: Json | null
+          id?: string
+          recommendations?: string | null
+          risk_level?: string | null
+          risk_score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,13 +1,25 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { FileText, FileCheck, Menu, X } from "lucide-react";
+import { FileText, FileCheck, Menu, X, Upload, User, LogOut } from "lucide-react";
+import { useAuthContext } from "@/context/AuthContext";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuthContext();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,11 +34,29 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Sign out failed", {
+        description: error.message,
+      });
+    } else {
+      toast.success("Signed out successfully");
+      navigate("/");
+    }
+  };
+
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Contracts", path: "/contracts", icon: FileText },
-    { name: "Documents", path: "/documents", icon: FileCheck },
+    { name: "Contracts", path: "/contracts", icon: FileText, requireAuth: true },
+    { name: "Documents", path: "/documents", icon: FileCheck, requireAuth: true },
+    { name: "Analyze Document", path: "/document-analysis", icon: Upload, requireAuth: true },
   ];
+
+  // Filter links based on authentication status
+  const filteredLinks = navLinks.filter(link => {
+    return !link.requireAuth || (link.requireAuth && user);
+  });
 
   return (
     <header
@@ -47,7 +77,7 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          {navLinks.map((link) => (
+          {filteredLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -62,6 +92,36 @@ const Navbar = () => {
             </Link>
           ))}
         </nav>
+
+        {/* Auth Buttons */}
+        <div className="hidden md:flex items-center space-x-2">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="ml-4">
+                  <User className="h-4 w-4 mr-2" />
+                  <span>Account</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="p-2 text-sm font-medium">
+                  {user.email}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </Link>
+          )}
+        </div>
 
         {/* Mobile Menu Button */}
         <button
@@ -81,7 +141,7 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 pt-16 bg-background glass-card z-40">
           <div className="flex flex-col p-6 space-y-6 text-center">
-            {navLinks.map((link) => (
+            {filteredLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -99,6 +159,32 @@ const Navbar = () => {
                 </div>
               </Link>
             ))}
+            
+            {user ? (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+                className="py-3 text-lg font-medium text-foreground/80"
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <LogOut className="h-6 w-6 mb-1" />
+                  Sign Out
+                </div>
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="py-3 text-lg font-medium text-foreground/80"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <User className="h-6 w-6 mb-1" />
+                  Sign In
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       )}
