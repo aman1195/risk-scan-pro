@@ -94,6 +94,40 @@ const Index = () => {
     },
   ];
 
+  const documentExample = (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+      <DocumentCard
+        id="example-1"
+        title="Employment Agreement"
+        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        status="completed"
+        riskLevel="medium"
+        riskScore={65}
+        findings={[
+          "Non-standard termination clause",
+          "Missing arbitration provision",
+          "Ambiguous payment terms"
+        ]}
+        className="transition-all duration-500 opacity-0 translate-y-4 transform"
+        onView={(id) => console.log("View document", id)}
+      />
+      <DocumentCard
+        id="example-2"
+        title="NDA with XYZ Corp"
+        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        status="completed"
+        riskLevel="low"
+        riskScore={25}
+        findings={[
+          "Standard confidentiality provisions",
+          "Well-defined scope of protected information"
+        ]}
+        className="transition-all duration-500 opacity-0 translate-y-4 transform"
+        onView={(id) => console.log("View document", id)}
+      />
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

@@ -1,7 +1,6 @@
 
-import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import ContractForm from "@/components/ContractForm";
+import EnhancedContractForm from "@/components/EnhancedContractForm";
 
 const Contracts = () => {
   return (
@@ -17,7 +16,7 @@ const Contracts = () => {
             </p>
           </div>
           
-          <ContractForm />
+          <EnhancedContractForm />
         </div>
       </main>
       

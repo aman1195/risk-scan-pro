@@ -1,173 +1,122 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Trash2, Plus, FilePlus } from "lucide-react";
+import { Trash2, Plus, FilePlus, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
-
-type DocumentStatus = "analyzing" | "completed" | "error";
-type RiskLevel = "low" | "medium" | "high";
-
-interface CompletedDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "completed";
-  riskLevel: RiskLevel;
-  riskScore: number;
-  findings: string[];
-}
-
-interface AnalyzingDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "analyzing";
-  progress: number;
-}
-
-interface ErrorDocument {
-  id: string;
-  title: string;
-  date: string;
-  status: "error";
-  error: string;
-}
-
-type DocumentType = CompletedDocument | AnalyzingDocument | ErrorDocument;
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { DocumentType, RiskLevel } from "@/types";
 
 const Documents = () => {
-  const [documents, setDocuments] = useState<DocumentType[]>([
-    {
-      id: "1",
-      title: "Non-Disclosure Agreement",
-      date: "June 15, 2023",
-      status: "completed" as const,
-      riskLevel: "low" as const,
-      riskScore: 25,
-      findings: [
-        "Standard NDA terms",
-        "2-year confidentiality period",
-        "Proper jurisdiction clause",
-      ],
-    },
-    {
-      id: "2",
-      title: "Employment Contract",
-      date: "July 3, 2023",
-      status: "completed" as const,
-      riskLevel: "medium" as const,
-      riskScore: 58,
-      findings: [
-        "Non-standard termination clause",
-        "Restrictive covenant may need review",
-        "Missing arbitration provision",
-      ],
-    },
-    {
-      id: "3",
-      title: "Software License Agreement",
-      date: "August 12, 2023",
-      status: "completed" as const,
-      riskLevel: "high" as const,
-      riskScore: 82,
-      findings: [
-        "Unlimited liability clause",
-        "Ambiguous licensing terms",
-        "No clear termination process",
-        "Potential IP rights conflicts",
-      ],
-    },
-    {
-      id: "4",
-      title: "Partnership Agreement",
-      date: "September 5, 2023",
-      status: "analyzing" as const,
-      progress: 65,
-    },
-    {
-      id: "5",
-      title: "Service Level Agreement",
-      date: "September 8, 2023",
-      status: "error" as const,
-      error: "Invalid document format. Please upload a PDF or DOCX file.",
-    },
-  ]);
+  const { user } = useAuthContext();
+  const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleUploadDocument = () => {
-    const newDoc: AnalyzingDocument = {
-      id: `${Date.now()}`,
-      title: "New Document",
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      status: "analyzing" as const,
-      progress: 0,
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("documents")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        // Convert database documents to the application's expected format
+        const formattedDocuments: DocumentType[] = data.map(doc => {
+          const date = new Date(doc.created_at).toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+
+          if (doc.status === "analyzing") {
+            return {
+              id: doc.id,
+              title: doc.title,
+              date,
+              status: "analyzing" as const,
+              progress: 65, // Placeholder progress value
+            };
+          } else if (doc.status === "error") {
+            return {
+              id: doc.id,
+              title: doc.title,
+              date,
+              status: "error" as const,
+              error: doc.error_message || "An unknown error occurred",
+            };
+          } else {
+            // Ensure findings is an array of strings
+            const findings = doc.findings ? 
+              (Array.isArray(doc.findings) ? doc.findings : [String(doc.findings)]) : 
+              [];
+            
+            return {
+              id: doc.id,
+              title: doc.title,
+              date,
+              status: "completed" as const,
+              riskLevel: (doc.risk_level as RiskLevel) || "medium",
+              riskScore: doc.risk_score || 50,
+              findings: findings.map(f => String(f)),
+              recommendations: doc.recommendations,
+            };
+          }
+        });
+
+        setDocuments(formattedDocuments);
+      } catch (error: any) {
+        console.error("Error fetching documents:", error);
+        toast.error("Failed to load documents", {
+          description: error.message,
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setDocuments((prevDocs) => [...prevDocs, newDoc]);
+    fetchDocuments();
+  }, [user]);
 
-    // Simulate document analysis progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
+  const handleDeleteDocument = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
       
-      if (progress <= 100) {
-        setDocuments((prevDocs) => {
-          return prevDocs.map(doc => {
-            if (doc.id === newDoc.id && doc.status === "analyzing") {
-              return {
-                ...doc,
-                progress
-              };
-            }
-            return doc;
-          });
-        });
-      }
-
-      if (progress === 100) {
-        clearInterval(interval);
-        
-        // After analysis is complete, update the document status
-        setTimeout(() => {
-          setDocuments((prevDocs) => {
-            return prevDocs.map(doc => {
-              if (doc.id === newDoc.id) {
-                const completedDoc: CompletedDocument = {
-                  id: doc.id,
-                  title: "Partnership Agreement",
-                  date: doc.date,
-                  status: "completed" as const,
-                  riskLevel: "medium" as const,
-                  riskScore: 45,
-                  findings: [
-                    "Non-standard profit sharing",
-                    "Unclear exit strategy",
-                    "Missing mediation clause"
-                  ]
-                };
-                
-                return completedDoc;
-              }
-              return doc;
-            });
-          });
-          
-          toast("Document analysis complete", {
-            description: "Review the findings to identify potential risks",
-          });
-        }, 1000);
-      }
-    }, 500);
+      setDocuments((prevDocs) => prevDocs.filter((doc) => doc.id !== id));
+      
+      toast("Document deleted", {
+        description: "The document has been removed from your list",
+      });
+    } catch (error: any) {
+      console.error("Error deleting document:", error);
+      toast.error("Failed to delete document", {
+        description: error.message,
+      });
+    }
   };
 
-  const handleDeleteDocument = (id: string) => {
-    setDocuments((prevDocs) => prevDocs.filter((doc) => doc.id !== id));
-    
-    toast("Document deleted", {
-      description: "The document has been removed from your list",
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center pt-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -183,13 +132,12 @@ const Documents = () => {
               </p>
             </div>
             
-            <button
-              onClick={handleUploadDocument}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-5 w-5" />
-              Upload Document
-            </button>
+            <Link to="/document-analysis">
+              <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                <Plus className="h-5 w-5" />
+                Upload Document
+              </Button>
+            </Link>
           </div>
           
           {documents.length === 0 ? (
@@ -199,20 +147,28 @@ const Documents = () => {
               <p className="text-muted-foreground mb-6">
                 Upload your first document to analyze potential risks
               </p>
-              <button
-                onClick={handleUploadDocument}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                Upload Document
-              </button>
+              <Link to="/document-analysis">
+                <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                  <Plus className="h-5 w-5" />
+                  Upload Document
+                </Button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {documents.map((doc) => (
                 <DocumentCard
                   key={doc.id}
-                  {...doc}
+                  id={doc.id}
+                  title={doc.title}
+                  date={doc.date}
+                  status={doc.status}
+                  riskLevel={doc.status === "completed" ? doc.riskLevel : undefined}
+                  riskScore={doc.status === "completed" ? doc.riskScore : undefined}
+                  findings={doc.status === "completed" ? doc.findings : undefined}
+                  recommendations={doc.status === "completed" ? doc.recommendations : undefined}
+                  progress={doc.status === "analyzing" ? doc.progress : undefined}
+                  error={doc.status === "error" ? doc.error : undefined}
                   onDelete={() => handleDeleteDocument(doc.id)}
                   onView={(id) => console.log("View document", id)}
                 />
