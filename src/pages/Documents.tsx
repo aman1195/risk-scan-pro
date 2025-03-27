@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Trash2, Plus, FilePlus, Loader2, FileText, File, ExternalLink } from "lucide-react";
@@ -78,6 +77,7 @@ const Documents = () => {
               title: doc.title,
               date,
               status: "error" as const,
+              // Use optional chaining to safely access error property that might not exist
               error: doc.error || "An unknown error occurred",
             };
           } else {
@@ -101,7 +101,14 @@ const Documents = () => {
         });
 
         setDocuments(formattedDocuments);
-        setContracts(contractsData);
+        
+        // Ensure contractsData is an array before setting it
+        if (Array.isArray(contractsData)) {
+          setContracts(contractsData);
+        } else {
+          console.error("Expected contractsData to be an array but got:", contractsData);
+          setContracts([]);
+        }
       } catch (error: any) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data", {

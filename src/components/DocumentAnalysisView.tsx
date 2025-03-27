@@ -28,13 +28,14 @@ const DocumentAnalysisView = ({ document, onClose }: DocumentAnalysisViewProps) 
 
   const handleDownload = () => {
     if (document.status === "completed" && document.body) {
-      const element = document.createElement("a");
+      // Use the global document object, not the document prop
+      const element = window.document.createElement("a");
       const file = new Blob([document.body], { type: 'text/plain' });
       element.href = URL.createObjectURL(file);
       element.download = `${document.title.replace(/\s+/g, '_')}_analysis.txt`;
-      document.body.appendChild(element);
+      window.document.body.appendChild(element);
       element.click();
-      document.body.removeChild(element);
+      window.document.body.removeChild(element);
       toast.success("Document downloaded");
     }
   };
