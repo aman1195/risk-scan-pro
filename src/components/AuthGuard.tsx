@@ -18,7 +18,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/documents" replace />;
   }
 
   return <>{children}</>;

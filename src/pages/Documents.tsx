@@ -1,35 +1,60 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Trash2, Plus, FilePlus, Loader2 } from "lucide-react";
+import { Trash2, Plus, FilePlus, Loader2, FileText, File } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
+import DocumentAnalysisView from "@/components/DocumentAnalysisView";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { DocumentType, RiskLevel } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface Contract {
+  id: string;
+  title: string;
+  contract_type: string;
+  first_party_name: string;
+  second_party_name: string;
+  jurisdiction: string | null;
+  created_at: string;
+}
 
 const Documents = () => {
   const { user } = useAuthContext();
   const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
 
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchData = async () => {
       if (!user) return;
 
       try {
-        const { data, error } = await supabase
+        // Fetch documents
+        const { data: documentsData, error: documentsError } = await supabase
           .from("documents")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
-        if (error) throw error;
+        if (documentsError) throw documentsError;
 
-        // Convert database documents to the application's expected format
-        const formattedDocuments: DocumentType[] = data.map(doc => {
+        // Fetch contracts
+        const { data: contractsData, error: contractsError } = await supabase
+          .from("contracts")
+          .select("id, title, contract_type, first_party_name, second_party_name, jurisdiction, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (contractsError) throw contractsError;
+
+        // Format documents
+        const formattedDocuments: DocumentType[] = documentsData.map(doc => {
           const date = new Date(doc.created_at).toLocaleDateString('en-US', { 
             month: 'long', 
             day: 'numeric', 
@@ -50,7 +75,7 @@ const Documents = () => {
               title: doc.title,
               date,
               status: "error" as const,
-              error: doc.error_message || "An unknown error occurred",
+              error: doc.error || "An unknown error occurred",
             };
           } else {
             // Ensure findings is an array of strings
@@ -72,9 +97,10 @@ const Documents = () => {
         });
 
         setDocuments(formattedDocuments);
+        setContracts(contractsData);
       } catch (error: any) {
-        console.error("Error fetching documents:", error);
-        toast.error("Failed to load documents", {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data", {
           description: error.message,
         });
       } finally {
@@ -82,7 +108,7 @@ const Documents = () => {
       }
     };
 
-    fetchDocuments();
+    fetchData();
   }, [user]);
 
   const handleDeleteDocument = async (id: string) => {
@@ -107,6 +133,39 @@ const Documents = () => {
     }
   };
 
+  const handleDeleteContract = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("contracts")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      setContracts((prevContracts) => prevContracts.filter((contract) => contract.id !== id));
+      
+      toast("Contract deleted", {
+        description: "The contract has been removed from your list",
+      });
+    } catch (error: any) {
+      console.error("Error deleting contract:", error);
+      toast.error("Failed to delete contract", {
+        description: error.message,
+      });
+    }
+  };
+
+  const handleViewDocument = (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    if (doc) {
+      setSelectedDocument(doc);
+    }
+  };
+
+  const handleCloseDocumentView = () => {
+    setSelectedDocument(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -124,59 +183,163 @@ const Documents = () => {
       
       <main className="flex-grow pt-24 pb-16 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-medium mb-2">Your Documents</h1>
               <p className="text-lg text-muted-foreground">
-                Upload and analyze your legal documents
+                Manage your legal documents and contracts
               </p>
             </div>
-            
-            <Link to="/document-analysis">
-              <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
-                <Plus className="h-5 w-5" />
-                Upload Document
-              </Button>
-            </Link>
           </div>
           
-          {documents.length === 0 ? (
-            <div className="text-center py-20">
-              <FilePlus className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-              <h3 className="text-xl font-medium mb-2">No documents yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Upload your first document to analyze potential risks
-              </p>
-              <Link to="/document-analysis">
-                <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
-                  <Plus className="h-5 w-5" />
-                  Upload Document
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {documents.map((doc) => (
-                <DocumentCard
-                  key={doc.id}
-                  id={doc.id}
-                  title={doc.title}
-                  date={doc.date}
-                  status={doc.status}
-                  riskLevel={doc.status === "completed" ? doc.riskLevel : undefined}
-                  riskScore={doc.status === "completed" ? doc.riskScore : undefined}
-                  findings={doc.status === "completed" ? doc.findings : undefined}
-                  recommendations={doc.status === "completed" ? doc.recommendations : undefined}
-                  progress={doc.status === "analyzing" ? doc.progress : undefined}
-                  error={doc.status === "error" ? doc.error : undefined}
-                  onDelete={() => handleDeleteDocument(doc.id)}
-                  onView={(id) => console.log("View document", id)}
-                />
-              ))}
-            </div>
-          )}
+          <Tabs defaultValue="documents" className="mb-12">
+            <TabsList className="mb-6">
+              <TabsTrigger value="documents" className="gap-2">
+                <File className="h-4 w-4" />
+                Analyzed Documents
+              </TabsTrigger>
+              <TabsTrigger value="contracts" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Generated Contracts
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="documents">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-medium">Document Analysis</h2>
+                <Link to="/document-analysis">
+                  <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                    <Plus className="h-5 w-5" />
+                    Analyze Document
+                  </Button>
+                </Link>
+              </div>
+              
+              {documents.length === 0 ? (
+                <div className="text-center py-20">
+                  <FilePlus className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium mb-2">No analyzed documents yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Upload your first document to analyze potential risks
+                  </p>
+                  <Link to="/document-analysis">
+                    <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                      <Plus className="h-5 w-5" />
+                      Analyze Document
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {documents.map((doc) => (
+                    <DocumentCard
+                      key={doc.id}
+                      id={doc.id}
+                      title={doc.title}
+                      date={doc.date}
+                      status={doc.status}
+                      riskLevel={doc.status === "completed" ? doc.riskLevel : undefined}
+                      riskScore={doc.status === "completed" ? doc.riskScore : undefined}
+                      findings={doc.status === "completed" ? doc.findings : undefined}
+                      recommendations={doc.status === "completed" ? doc.recommendations : undefined}
+                      progress={doc.status === "analyzing" ? doc.progress : undefined}
+                      error={doc.status === "error" ? doc.error : undefined}
+                      onDelete={() => handleDeleteDocument(doc.id)}
+                      onView={() => handleViewDocument(doc.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="contracts">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-medium">Your Contracts</h2>
+                <Link to="/contracts">
+                  <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                    <Plus className="h-5 w-5" />
+                    Create Contract
+                  </Button>
+                </Link>
+              </div>
+              
+              {contracts.length === 0 ? (
+                <div className="text-center py-20">
+                  <FileText className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium mb-2">No contracts yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Create your first contract using our intelligent templates
+                  </p>
+                  <Link to="/contracts">
+                    <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                      <Plus className="h-5 w-5" />
+                      Create Contract
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {contracts.map((contract) => (
+                    <div 
+                      key={contract.id}
+                      className="glass-card p-6 transition-all duration-300 hover:shadow-lg"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-3">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-lg leading-tight">{contract.title}</h3>
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <span>{new Date(contract.created_at).toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}</span>
+                              <span className="mx-2">•</span>
+                              <span>{contract.contract_type}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={() => handleDeleteContract(contract.id)}
+                          className="p-2 rounded-lg text-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          aria-label="Delete contract"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="mt-4 space-y-2">
+                        <div className="flex text-sm">
+                          <span className="text-muted-foreground mr-2">Parties:</span>
+                          <span className="flex-1">{contract.first_party_name} & {contract.second_party_name}</span>
+                        </div>
+                        
+                        {contract.jurisdiction && (
+                          <div className="flex text-sm">
+                            <span className="text-muted-foreground mr-2">Jurisdiction:</span>
+                            <span className="flex-1">{contract.jurisdiction}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
+      
+      {selectedDocument && (
+        <DocumentAnalysisView 
+          document={selectedDocument} 
+          onClose={handleCloseDocumentView} 
+        />
+      )}
       
       <footer className="border-t py-8 px-6 md:px-12">
         <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">

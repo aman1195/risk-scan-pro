@@ -1,14 +1,30 @@
+
 export const CONTRACT_TYPES = [
-  "Employment Agreement",
+  // Most popular agreements first
   "Non-Disclosure Agreement (NDA)",
+  "Employment Agreement",
   "Service Agreement",
-  "Partnership Agreement",
-  "Sales Agreement",
-  "Lease Agreement",
   "Consulting Agreement",
-  "Freelance Contract",
-  "Website Terms of Service",
+  "Sales Contract",
+  "Lease Agreement",
+  "Term Sheet",
+  "SAFE Note Agreement",
+  "Convertible Note Agreement",
+  "Equity Vesting Agreement",
+  "Partnership Agreement",
+  // Less common agreements
+  "Distribution Agreement",
+  "Licensing Agreement",
+  "Software License Agreement",
+  "Freelancer Contract",
+  "Intellectual Property Assignment",
+  "Co-Founder Agreement",
+  "Stock Option Agreement",
+  "Investment Agreement",
+  "Terms of Service",
   "Privacy Policy",
+  "Data Processing Agreement",
+  "SAAS Agreement"
 ];
 
 export const JURISDICTIONS = [
@@ -64,7 +80,7 @@ export interface DocumentCardProps {
   recommendations?: string;
   progress?: number;
   error?: string;
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
   onView?: (id: string) => void;
   className?: string;
 }

@@ -3,19 +3,19 @@ import { useState } from "react";
 import { FileText, Trash2, ExternalLink, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import RiskIndicator from "./RiskIndicator";
-
-type DocumentStatus = "analyzing" | "completed" | "error";
-type RiskLevel = "low" | "medium" | "high";
+import { RiskLevel } from "@/types";
 
 interface DocumentCardProps {
   id: string;
   title: string;
   date: string;
-  status: DocumentStatus;
+  status: "analyzing" | "completed" | "error";
   progress?: number;
   riskLevel?: RiskLevel;
   riskScore?: number;
   findings?: string[];
+  recommendations?: string;
+  error?: string;
   onDelete?: (id: string) => void;
   onView?: (id: string) => void;
   className?: string;
@@ -30,6 +30,8 @@ const DocumentCard = ({
   riskLevel = "low",
   riskScore,
   findings = [],
+  recommendations,
+  error,
   onDelete,
   onView,
   className,
@@ -130,7 +132,7 @@ const DocumentCard = ({
         </div>
       )}
 
-      {status === "completed" && findings.length > 0 && (
+      {status === "completed" && findings && findings.length > 0 && (
         <div className="mt-4">
           <h4 className="text-sm font-medium mb-2">Key Findings</h4>
           <ul className="text-sm space-y-1">
@@ -138,7 +140,7 @@ const DocumentCard = ({
               <li key={index} className="text-muted-foreground">{finding}</li>
             ))}
             {findings.length > 3 && (
-              <li className="text-primary text-xs font-medium cursor-pointer hover:underline">
+              <li className="text-primary text-xs font-medium cursor-pointer hover:underline" onClick={() => onView && onView(id)}>
                 + {findings.length - 3} more findings
               </li>
             )}
@@ -146,9 +148,9 @@ const DocumentCard = ({
         </div>
       )}
 
-      {status === "error" && (
+      {status === "error" && error && (
         <div className="mt-4 p-3 bg-destructive/10 rounded-lg border border-destructive/20 text-sm text-destructive">
-          Analysis failed. Please try again or contact support.
+          {error}
         </div>
       )}
     </div>

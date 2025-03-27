@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Shield, CheckSquare, ExternalLink, FileCheck } from "lucide-react";
@@ -70,8 +71,8 @@ const Index = () => {
       id: "1",
       title: "Non-Disclosure Agreement",
       date: "June 15, 2023",
-      status: "completed",
-      riskLevel: "low",
+      status: "completed" as const,
+      riskLevel: "low" as const,
       riskScore: 25,
       findings: [
         "Standard NDA terms",
@@ -83,8 +84,8 @@ const Index = () => {
       id: "2",
       title: "Employment Contract",
       date: "July 3, 2023",
-      status: "completed",
-      riskLevel: "medium",
+      status: "completed" as const,
+      riskLevel: "medium" as const,
       riskScore: 58,
       findings: [
         "Non-standard termination clause",
@@ -326,7 +327,7 @@ const Index = () => {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   )}
-                  transitionDelay={`${index * 150}ms`}
+                  style={{ transitionDelay: `${index * 150}ms` }}
                   onView={(id) => console.log("View document", id)}
                 />
               ))}
