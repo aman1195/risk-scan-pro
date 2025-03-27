@@ -19,6 +19,7 @@ interface DocumentCardProps {
   onDelete?: (id: string) => void;
   onView?: (id: string) => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const DocumentCard = ({
@@ -35,6 +36,7 @@ const DocumentCard = ({
   onDelete,
   onView,
   className,
+  style,
 }: DocumentCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -71,6 +73,7 @@ const DocumentCard = ({
         isHovered && "shadow-lg",
         className
       )}
+      style={style}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

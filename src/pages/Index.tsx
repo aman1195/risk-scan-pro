@@ -95,40 +95,6 @@ const Index = () => {
     },
   ];
 
-  const documentExample = (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-      <DocumentCard
-        id="example-1"
-        title="Employment Agreement"
-        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-        status="completed"
-        riskLevel="medium"
-        riskScore={65}
-        findings={[
-          "Non-standard termination clause",
-          "Missing arbitration provision",
-          "Ambiguous payment terms"
-        ]}
-        className="transition-all duration-500 opacity-0 translate-y-4 transform"
-        onView={(id) => console.log("View document", id)}
-      />
-      <DocumentCard
-        id="example-2"
-        title="NDA with XYZ Corp"
-        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-        status="completed"
-        riskLevel="low"
-        riskScore={25}
-        findings={[
-          "Standard confidentiality provisions",
-          "Well-defined scope of protected information"
-        ]}
-        className="transition-all duration-500 opacity-0 translate-y-4 transform"
-        onView={(id) => console.log("View document", id)}
-      />
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -352,7 +318,7 @@ const Index = () => {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mr-2">
               <FileCheck className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-medium">RiskScan</span>
+            <span className="text-lg font-medium">LawBit</span>
           </div>
           
           <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
@@ -368,7 +334,7 @@ const Index = () => {
           </div>
           
           <div className="mt-6 md:mt-0 text-sm text-muted-foreground">
-            © {new Date().getFullYear()} RiskScan. All rights reserved.
+            © {new Date().getFullYear()} LawBit. All rights reserved.
           </div>
         </div>
       </footer>

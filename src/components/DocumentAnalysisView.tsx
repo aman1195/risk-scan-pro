@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Download, Copy } from "lucide-react";
+import { X, Download, Copy, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import RiskIndicator from "./RiskIndicator";
 import { DocumentType, CompletedDocument } from "@/types";

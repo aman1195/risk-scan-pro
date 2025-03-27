@@ -47,10 +47,10 @@ const Documents = () => {
 
         if (documentsError) throw documentsError;
 
-        // Fetch contracts
+        // Fetch contracts - remove contract_content if it doesn't exist
         const { data: contractsData, error: contractsError } = await supabase
           .from("contracts")
-          .select("id, title, contract_type, first_party_name, second_party_name, jurisdiction, created_at, contract_content")
+          .select("id, title, contract_type, first_party_name, second_party_name, jurisdiction, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
