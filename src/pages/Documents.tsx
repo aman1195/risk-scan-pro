@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Trash2, Plus, FilePlus, Loader2, FileText, File } from "lucide-react";
+import { Trash2, Plus, FilePlus, Loader2, FileText, File, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
 import DocumentAnalysisView from "@/components/DocumentAnalysisView";
+import ContractView from "@/components/ContractView";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ interface Contract {
   second_party_name: string;
   jurisdiction: string | null;
   created_at: string;
+  contract_content?: string;
 }
 
 const Documents = () => {
@@ -29,6 +31,7 @@ const Documents = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +50,7 @@ const Documents = () => {
         // Fetch contracts
         const { data: contractsData, error: contractsError } = await supabase
           .from("contracts")
-          .select("id, title, contract_type, first_party_name, second_party_name, jurisdiction, created_at")
+          .select("id, title, contract_type, first_party_name, second_party_name, jurisdiction, created_at, contract_content")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
@@ -92,6 +95,7 @@ const Documents = () => {
               riskScore: doc.risk_score || 50,
               findings: findings.map(f => String(f)),
               recommendations: doc.recommendations,
+              body: doc.content,
             };
           }
         });
@@ -162,8 +166,19 @@ const Documents = () => {
     }
   };
 
+  const handleViewContract = (id: string) => {
+    const contract = contracts.find(c => c.id === id);
+    if (contract) {
+      setSelectedContract(contract);
+    }
+  };
+
   const handleCloseDocumentView = () => {
     setSelectedDocument(null);
+  };
+
+  const handleCloseContractView = () => {
+    setSelectedContract(null);
   };
 
   if (loading) {
@@ -171,7 +186,7 @@ const Documents = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center pt-24">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#FF7A00]" />
         </div>
       </div>
     );
@@ -208,7 +223,7 @@ const Documents = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-medium">Document Analysis</h2>
                 <Link to="/document-analysis">
-                  <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                  <Button className="px-4 py-2 bg-[#FF7A00] text-white rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-[#FF7A00]/90 transition-colors">
                     <Plus className="h-5 w-5" />
                     Analyze Document
                   </Button>
@@ -223,7 +238,7 @@ const Documents = () => {
                     Upload your first document to analyze potential risks
                   </p>
                   <Link to="/document-analysis">
-                    <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                    <Button className="px-4 py-2 bg-[#FF7A00] text-white rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-[#FF7A00]/90 transition-colors">
                       <Plus className="h-5 w-5" />
                       Analyze Document
                     </Button>
@@ -256,7 +271,7 @@ const Documents = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-medium">Your Contracts</h2>
                 <Link to="/contracts">
-                  <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                  <Button className="px-4 py-2 bg-[#FF7A00] text-white rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-[#FF7A00]/90 transition-colors">
                     <Plus className="h-5 w-5" />
                     Create Contract
                   </Button>
@@ -271,7 +286,7 @@ const Documents = () => {
                     Create your first contract using our intelligent templates
                   </p>
                   <Link to="/contracts">
-                    <Button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-primary/90 transition-colors">
+                    <Button className="px-4 py-2 bg-[#FF7A00] text-white rounded-lg inline-flex items-center gap-2 shadow-sm hover:bg-[#FF7A00]/90 transition-colors">
                       <Plus className="h-5 w-5" />
                       Create Contract
                     </Button>
@@ -286,7 +301,7 @@ const Documents = () => {
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center">
-                          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-3">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#FF7A00]/10 text-[#FF7A00] mr-3">
                             <FileText className="h-5 w-5" />
                           </div>
                           <div>
@@ -303,13 +318,22 @@ const Documents = () => {
                           </div>
                         </div>
                         
-                        <button
-                          onClick={() => handleDeleteContract(contract.id)}
-                          className="p-2 rounded-lg text-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          aria-label="Delete contract"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewContract(contract.id)}
+                            className="p-2 rounded-lg text-foreground/70 hover:text-[#FF7A00] hover:bg-[#FF7A00]/10 transition-colors"
+                            aria-label="View contract"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteContract(contract.id)}
+                            className="p-2 rounded-lg text-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            aria-label="Delete contract"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="mt-4 space-y-2">
@@ -341,9 +365,16 @@ const Documents = () => {
         />
       )}
       
+      {selectedContract && (
+        <ContractView
+          contract={selectedContract}
+          onClose={handleCloseContractView}
+        />
+      )}
+      
       <footer className="border-t py-8 px-6 md:px-12">
         <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RiskScan. All rights reserved.
+          © {new Date().getFullYear()} LawBit. All rights reserved.
         </div>
       </footer>
     </div>

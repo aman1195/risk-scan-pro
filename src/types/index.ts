@@ -37,8 +37,16 @@ export const JURISDICTIONS = [
   "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
 ];
 
+export const AI_MODELS = [
+  { id: "openai", name: "OpenAI", model: "gpt-4o" },
+  { id: "gemini", name: "Google Gemini", model: "gemini-1.5-pro" },
+  { id: "grok", name: "Grok", model: "grok-1" }
+];
+
 // Document type definitions
 export type RiskLevel = "low" | "medium" | "high";
+
+export type AIModel = "openai" | "gemini" | "grok";
 
 export type AnalyzingDocument = {
   id: string;
@@ -65,6 +73,7 @@ export type CompletedDocument = {
   riskScore: number;
   findings: string[];
   recommendations?: string;
+  body?: string;
 };
 
 export type DocumentType = AnalyzingDocument | ErrorDocument | CompletedDocument;
@@ -83,4 +92,24 @@ export interface DocumentCardProps {
   onDelete?: (id: string) => void;
   onView?: (id: string) => void;
   className?: string;
+  style?: React.CSSProperties;
+}
+
+export interface ContractPreviewProps {
+  contract: {
+    id?: string;
+    title: string;
+    contractType: string;
+    firstParty: string;
+    firstPartyAddress?: string;
+    secondParty: string;
+    secondPartyAddress?: string;
+    jurisdiction?: string;
+    description?: string;
+    keyTerms?: string;
+    intensity: string;
+    aiModel?: string;
+  };
+  onClose: () => void;
+  onSaved: () => void;
 }
