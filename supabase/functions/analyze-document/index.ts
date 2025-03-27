@@ -110,6 +110,11 @@ serve(async (req) => {
       };
     }
 
+    // Ensure findings is an array of strings
+    const findings = Array.isArray(analysis.findings) 
+      ? analysis.findings.map(finding => String(finding))
+      : [String(analysis.findings)];
+
     // Update the document in the database
     const { error: updateError } = await supabase
       .from('documents')
@@ -117,7 +122,7 @@ serve(async (req) => {
         status: 'completed',
         risk_level: analysis.riskLevel,
         risk_score: analysis.riskScore,
-        findings: analysis.findings,
+        findings: findings,
         recommendations: analysis.recommendations
       })
       .eq('id', documentId);
@@ -129,7 +134,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        analysis
+        analysis: {
+          ...analysis,
+          findings: findings
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

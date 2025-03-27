@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Trash2, Plus, FilePlus, Loader2 } from "lucide-react";
@@ -9,7 +8,7 @@ import DocumentCard from "@/components/DocumentCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { DocumentType } from "@/types";
+import { DocumentType, RiskLevel } from "@/types";
 
 const Documents = () => {
   const { user } = useAuthContext();
@@ -51,17 +50,22 @@ const Documents = () => {
               title: doc.title,
               date,
               status: "error" as const,
-              error: doc.error || "An unknown error occurred",
+              error: doc.error_message || "An unknown error occurred",
             };
           } else {
+            // Ensure findings is an array of strings
+            const findings = doc.findings ? 
+              (Array.isArray(doc.findings) ? doc.findings : [String(doc.findings)]) : 
+              [];
+            
             return {
               id: doc.id,
               title: doc.title,
               date,
               status: "completed" as const,
-              riskLevel: (doc.risk_level as "low" | "medium" | "high") || "medium",
+              riskLevel: (doc.risk_level as RiskLevel) || "medium",
               riskScore: doc.risk_score || 50,
-              findings: doc.findings || [],
+              findings: findings.map(f => String(f)),
               recommendations: doc.recommendations,
             };
           }
@@ -155,7 +159,16 @@ const Documents = () => {
               {documents.map((doc) => (
                 <DocumentCard
                   key={doc.id}
-                  {...doc}
+                  id={doc.id}
+                  title={doc.title}
+                  date={doc.date}
+                  status={doc.status}
+                  riskLevel={doc.status === "completed" ? doc.riskLevel : undefined}
+                  riskScore={doc.status === "completed" ? doc.riskScore : undefined}
+                  findings={doc.status === "completed" ? doc.findings : undefined}
+                  recommendations={doc.status === "completed" ? doc.recommendations : undefined}
+                  progress={doc.status === "analyzing" ? doc.progress : undefined}
+                  error={doc.status === "error" ? doc.error : undefined}
                   onDelete={() => handleDeleteDocument(doc.id)}
                   onView={(id) => console.log("View document", id)}
                 />
