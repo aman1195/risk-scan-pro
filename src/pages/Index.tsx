@@ -1,7 +1,6 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Shield, CheckSquare, ExternalLink } from "lucide-react";
+import { FileText, Shield, CheckSquare, ExternalLink, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
@@ -293,7 +292,7 @@ const Index = () => {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   )}
-                  style={{ transitionDelay: `${index * 150}ms` }}
+                  transitionDelay={`${index * 150}ms`}
                   onView={(id) => console.log("View document", id)}
                 />
               ))}
