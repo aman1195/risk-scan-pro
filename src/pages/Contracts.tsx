@@ -1,6 +1,7 @@
 
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import EnhancedContractForm from "@/components/EnhancedContractForm";
+import ContractForm from "@/components/ContractForm";
 
 const Contracts = () => {
   return (
@@ -16,13 +17,13 @@ const Contracts = () => {
             </p>
           </div>
           
-          <EnhancedContractForm />
+          <ContractForm />
         </div>
       </main>
       
       <footer className="border-t py-8 px-6 md:px-12">
         <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} LawBit. All rights reserved.
+          © {new Date().getFullYear()} RiskScan. All rights reserved.
         </div>
       </footer>
     </div>

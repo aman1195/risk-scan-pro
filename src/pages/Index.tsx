@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Shield, CheckSquare, ExternalLink, FileCheck } from "lucide-react";
@@ -71,8 +70,8 @@ const Index = () => {
       id: "1",
       title: "Non-Disclosure Agreement",
       date: "June 15, 2023",
-      status: "completed" as const,
-      riskLevel: "low" as const,
+      status: "completed",
+      riskLevel: "low",
       riskScore: 25,
       findings: [
         "Standard NDA terms",
@@ -84,8 +83,8 @@ const Index = () => {
       id: "2",
       title: "Employment Contract",
       date: "July 3, 2023",
-      status: "completed" as const,
-      riskLevel: "medium" as const,
+      status: "completed",
+      riskLevel: "medium",
       riskScore: 58,
       findings: [
         "Non-standard termination clause",
@@ -293,7 +292,7 @@ const Index = () => {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   )}
-                  style={{ transitionDelay: `${index * 150}ms` }}
+                  transitionDelay={`${index * 150}ms`}
                   onView={(id) => console.log("View document", id)}
                 />
               ))}
@@ -318,7 +317,7 @@ const Index = () => {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mr-2">
               <FileCheck className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-medium">LawBit</span>
+            <span className="text-lg font-medium">RiskScan</span>
           </div>
           
           <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
@@ -334,7 +333,7 @@ const Index = () => {
           </div>
           
           <div className="mt-6 md:mt-0 text-sm text-muted-foreground">
-            © {new Date().getFullYear()} LawBit. All rights reserved.
+            © {new Date().getFullYear()} RiskScan. All rights reserved.
           </div>
         </div>
       </footer>
